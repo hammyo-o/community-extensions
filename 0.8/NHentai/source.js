@@ -1015,7 +1015,7 @@ var _Sources = (() => {
           App.createDUISection({
             id: "reset_section",
             isHidden: false,
-            rows: [
+            rows: async () => [
               resetSettings(stateManager),
             ],
           })
@@ -1357,7 +1357,7 @@ var _Sources = (() => {
               App.createDUISection({
                 id: "reset_section",
                 isHidden: false,
-                rows: [
+                rows: async () => [
                   resetSettings(this.stateManager),
                 ],
               })

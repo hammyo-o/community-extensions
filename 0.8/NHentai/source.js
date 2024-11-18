@@ -1622,7 +1622,7 @@ Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
       const extraArgsQuery = await this.extraArgs(this.stateManager);
       const pageQuery = query?.pages ? ` pages:${query.pages}` : '';
       const uploadedQuery = query?.uploaded ? ` uploaded:${query.uploaded}` : '';
-      return `${languageQuery} ${extraArgsQuery} ${pageQuery} ${uploadedQuery}`.trim().replace(/"/g, '%22');
+      return `${languageQuery}${extraArgsQuery}${pageQuery}${uploadedQuery}`.trim();
     }
     async language(stateManager) {
       const lang = await stateManager.retrieve("languages") ?? "";
@@ -1638,7 +1638,7 @@ Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
     }
     async extraArgs(stateManager) {
       const args = await getExtraArgs(stateManager);
-      return args ? args.split(/\s+/).map(arg => arg.trim()).join(' ') : '';
+      return args ? ` ${args.split(/\s+/).map(arg => arg.trim()).join(' ')}` : '';
     }
     async getReadMangaIds() {
       const allData = await this.stateManager.retrieve("read_manga_ids");

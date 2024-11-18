@@ -887,11 +887,13 @@ var _Sources = (() => {
     for (const gallery of data.result) {
       if (collectedIds.includes(gallery.id.toString()))
         continue;
+      const language = NHLanguages.getName(getLanguage(gallery));
+      const pageCount = gallery.num_pages;
       tiles.push(App.createPartialSourceManga({
         image: `https://t.nhentai.net/galleries/${gallery.media_id}/cover.${typeOfImage(gallery.images.cover)}`,
         title: gallery.title.pretty,
         mangaId: gallery.id.toString(),
-        subtitle: NHLanguages.getName(getLanguage(gallery))
+        subtitle: `${language} - ${pageCount} pages`
       }));
       collectedIds.push(gallery.id.toString());
     }

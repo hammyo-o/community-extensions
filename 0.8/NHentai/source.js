@@ -893,13 +893,16 @@ var _Sources = (() => {
     for (const gallery of data.result) {
       if (collectedIds.includes(gallery.id.toString()))
         continue;
-      const language = NHLanguages.getName(getLanguage(gallery));
+      let language = NHLanguages.getName(getLanguage(gallery));
+      if (language === "English") {
+        language = "Eng";
+      }
       const pageCount = gallery.num_pages;
       tiles.push(App.createPartialSourceManga({
         image: `https://t.nhentai.net/galleries/${gallery.media_id}/cover.${typeOfImage(gallery.images.cover)}`,
         title: gallery.title.pretty,
         mangaId: gallery.id.toString(),
-        subtitle: `${language} - ${pageCount} pages`
+        subtitle: `${language} - ${pageCount} pgs`
       }));
       collectedIds.push(gallery.id.toString());
     }
@@ -1635,7 +1638,7 @@ Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
     }
     async extraArgs(stateManager) {
       const args = await getExtraArgs(stateManager);
-      return ` ${args}`;
+      return args.split(' ').map(arg => arg.trim()).join(' ');
     }
     async getReadMangaIds() {
       const allData = await this.stateManager.retrieve("read_manga_ids");

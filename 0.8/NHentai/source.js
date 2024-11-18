@@ -947,82 +947,80 @@ var _Sources = (() => {
       id: "settings",
       label: "Content Settings",
       form: App.createDUIForm({
-        sections: () => {
-          return Promise.resolve([
-            App.createDUISection({
-              id: "content",
-              footer: 'Tags with a space or "-" in them need to be double quoted. \nExample: "love-saber" and -"big breasts"\nTo exclude tags, add a "-" in the front. To include, add a "+".',
-              rows: async () => {
-                await Promise.all([
-                  getLanguages(stateManager),
-                  getSortOrders(stateManager),
-                  getExtraArgs(stateManager)
-                ]);
-                return [
-                  App.createDUISelect({
-                    id: "languages",
-                    label: "Languages",
-                    options: NHLanguages.getNHCodeList(),
-                    labelResolver: async (option) => NHLanguages.getName(option),
-                    value: App.createDUIBinding({
-                      get: () => getLanguages(stateManager),
-                      set: async (newValue) => {
-                        console.log("New value:", JSON.stringify(newValue));
-                        if (Array.isArray(newValue)) {
-                          await stateManager.store("languages", newValue);
-                        } else {
-                          console.error("Invalid newValue:", newValue);
-                        }
+        sections: () => [
+          App.createDUISection({
+            id: "content",
+            footer: 'Tags with a space or "-" in them need to be double quoted. \nExample: "love-saber" and -"big breasts"\nTo exclude tags, add a "-" in the front. To include, add a "+".',
+            rows: async () => {
+              await Promise.all([
+                getLanguages(stateManager),
+                getSortOrders(stateManager),
+                getExtraArgs(stateManager)
+              ]);
+              return [
+                App.createDUISelect({
+                  id: "languages",
+                  label: "Languages",
+                  options: NHLanguages.getNHCodeList(),
+                  labelResolver: async (option) => NHLanguages.getName(option),
+                  value: App.createDUIBinding({
+                    get: () => getLanguages(stateManager),
+                    set: async (newValue) => {
+                      console.log("New value:", JSON.stringify(newValue));
+                      if (Array.isArray(newValue)) {
+                        await stateManager.store("languages", newValue);
+                      } else {
+                        console.error("Invalid newValue:", newValue);
                       }
-                    }),
-                    allowsMultiselect: false
+                    }
                   }),
-                  App.createDUISelect({
-                    id: "sort_order",
-                    label: "Default search sort order",
-                    options: NHSortOrders.getNHCodeList(),
-                    labelResolver: async (option) => NHSortOrders.getName(option),
-                    value: App.createDUIBinding({
-                      get: () => getSortOrders(stateManager),
-                      set: async (newValue) => {
-                        console.log("New value:", JSON.stringify(newValue));
-                        if (Array.isArray(newValue)) {
-                          await stateManager.store("sort_order", newValue);
-                        } else {
-                          console.error("Invalid newValue:", newValue);
-                        }
+                  allowsMultiselect: false
+                }),
+                App.createDUISelect({
+                  id: "sort_order",
+                  label: "Default search sort order",
+                  options: NHSortOrders.getNHCodeList(),
+                  labelResolver: async (option) => NHSortOrders.getName(option),
+                  value: App.createDUIBinding({
+                    get: () => getSortOrders(stateManager),
+                    set: async (newValue) => {
+                      console.log("New value:", JSON.stringify(newValue));
+                      if (Array.isArray(newValue)) {
+                        await stateManager.store("sort_order", newValue);
+                      } else {
+                        console.error("Invalid newValue:", newValue);
                       }
-                    }),
-                    allowsMultiselect: false
+                    }
                   }),
-                  App.createDUIInputField({
-                    id: "extra_args",
-                    label: "Additional arguments",
-                    value: App.createDUIBinding({
-                      get: () => getExtraArgs(stateManager),
-                      set: async (newValue) => {
-                        console.log("New extra_args value:", newValue);
-                        if (isValidExtraArgs(newValue)) {
-                          await stateManager.store("extra_args", newValue);
-                        } else {
-                          console.error("Invalid newValue:", newValue);
-                        }
+                  allowsMultiselect: false
+                }),
+                App.createDUIInputField({
+                  id: "extra_args",
+                  label: "Additional arguments",
+                  value: App.createDUIBinding({
+                    get: () => getExtraArgs(stateManager),
+                    set: async (newValue) => {
+                      console.log("New extra_args value:", newValue);
+                      if (isValidExtraArgs(newValue)) {
+                        await stateManager.store("extra_args", newValue);
+                      } else {
+                        console.error("Invalid newValue:", newValue);
                       }
-                    })
+                    }
                   })
-                ];
-              },
-              isHidden: false
-            }),
-            App.createDUISection({
-              id: "reset_section",
-              isHidden: false,
-              rows: [
-                resetSettings(stateManager),
-              ],
-            })
-          ]);
-        }
+                })
+              ];
+            },
+            isHidden: false
+          }),
+          App.createDUISection({
+            id: "reset_section",
+            isHidden: false,
+            rows: [
+              resetSettings(stateManager),
+            ],
+          })
+        ],
       })
     });
   };

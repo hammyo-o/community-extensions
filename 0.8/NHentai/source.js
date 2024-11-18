@@ -957,7 +957,7 @@ var _Sources = (() => {
                   getSortOrders(stateManager),
                   getExtraArgs(stateManager)
                 ]);
-                return await [
+                return [
                   App.createDUISelect({
                     id: "languages",
                     label: "Languages",
@@ -1295,7 +1295,7 @@ var _Sources = (() => {
                     getSortOrders(this.stateManager),
                     getExtraArgs(this.stateManager)
                   ]);
-                  return await [
+                  return [
                     App.createDUISelect({
                       id: "languages",
                       label: "Languages",
@@ -1346,11 +1346,11 @@ var _Sources = (() => {
       return Promise.resolve(App.createDUISection({
         id: "main",
         header: "Source Settings",
-        rows: () => Promise.resolve([
+        rows: async () => [
           App.createDUINavigationButton({
             id: "settings",
             label: "Content Settings",
-            form: this.getSettingsForm()
+            form: await this.getSettingsForm()
           }),
           App.createDUIButton({
             id: "reset",
@@ -1371,7 +1371,7 @@ var _Sources = (() => {
               set: async (newValue) => await this.stateManager.store("skip_read_manga", newValue)
             })
           })
-        ]),
+        ],
         isHidden: false
       }));
     }

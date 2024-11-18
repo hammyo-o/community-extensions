@@ -965,7 +965,14 @@ var _Sources = (() => {
                     labelResolver: async (option) => NHLanguages.getName(option),
                     value: App.createDUIBinding({
                       get: () => getLanguages(stateManager),
-                      set: async (newValue) => await stateManager.store("languages", newValue)
+                      set: async (newValue) => {
+                        console.log("New value:", JSON.stringify(newValue));
+                        if (Array.isArray(newValue)) {
+                          await stateManager.store("languages", newValue);
+                        } else {
+                          console.error("Invalid newValue:", newValue);
+                        }
+                      }
                     }),
                     allowsMultiselect: false
                   }),
@@ -976,7 +983,14 @@ var _Sources = (() => {
                     labelResolver: async (option) => NHSortOrders.getName(option),
                     value: App.createDUIBinding({
                       get: () => getSortOrders(stateManager),
-                      set: async (newValue) => await stateManager.store("sort_order", newValue)
+                      set: async (newValue) => {
+                        console.log("New value:", JSON.stringify(newValue));
+                        if (Array.isArray(newValue)) {
+                          await stateManager.store("sort_order", newValue);
+                        } else {
+                          console.error("Invalid newValue:", newValue);
+                        }
+                      }
                     }),
                     allowsMultiselect: false
                   }),
@@ -986,10 +1000,12 @@ var _Sources = (() => {
                     value: App.createDUIBinding({
                       get: () => getExtraArgs(stateManager),
                       set: async (newValue) => {
-                        await stateManager.store(
-                          "extra_args",
-                          newValue.replaceAll(/‘|’/g, "'").replaceAll(/“|”/g, '"')
-                        );
+                        console.log("New extra_args value:", newValue);
+                        if (isValidExtraArgs(newValue)) {
+                          await stateManager.store("extra_args", newValue);
+                        } else {
+                          console.error("Invalid newValue:", newValue);
+                        }
                       }
                     })
                   })

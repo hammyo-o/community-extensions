@@ -1351,7 +1351,7 @@ var _Sources = (() => {
                         getSortOrders(this.stateManager),
                         getExtraArgs(this.stateManager)
                       ]);
-                      return await [
+                      return [
                         App.createDUISelect({
                           id: "languages",
                           label: "Languages",

@@ -1283,56 +1283,55 @@ var _Sources = (() => {
 
     async getSettingsForm() {
       if (!this.settingsForm) {
+        const languagesBinding = App.createDUIBinding({
+          get: () => getLanguages(this.stateManager),
+          set: async (newValue) => await this.stateManager.store("languages", newValue)
+        });
+
+        const sortOrderBinding = App.createDUIBinding({
+          get: () => getSortOrders(this.stateManager),
+          set: async (newValue) => await this.stateManager.store("sort_order", newValue)
+        });
+
+        const extraArgsBinding = App.createDUIBinding({
+          get: () => getExtraArgs(this.stateManager),
+          set: async (newValue) => {
+            await this.stateManager.store(
+              "extra_args",
+              newValue.replaceAll(/‘|’/g, "'").replaceAll(/“|”/g, '"')
+            );
+          }
+        });
+
         this.settingsForm = App.createDUIForm({
           sections: () => {
             return Promise.resolve([
               App.createDUISection({
                 id: "content",
                 footer: 'Tags with a space or "-" in them need to be double quoted. \nExample: "love-saber" and -"big breasts"\nTo exclude tags, add a "-" in the front. To include, add a "+".',
-                rows: async () => {
-                  await Promise.all([
-                    getLanguages(this.stateManager),
-                    getSortOrders(this.stateManager),
-                    getExtraArgs(this.stateManager)
-                  ]);
-                  return [
-                    App.createDUISelect({
-                      id: "languages",
-                      label: "Languages",
-                      options: NHLanguages.getNHCodeList(),
-                      labelResolver: async (option) => NHLanguages.getName(option),
-                      value: App.createDUIBinding({
-                        get: () => getLanguages(this.stateManager),
-                        set: async (newValue) => await this.stateManager.store("languages", newValue)
-                      }),
-                      allowsMultiselect: false
-                    }),
-                    App.createDUISelect({
-                      id: "sort_order",
-                      label: "Default search sort order",
-                      options: NHSortOrders.getNHCodeList(),
-                      labelResolver: async (option) => NHSortOrders.getName(option),
-                      value: App.createDUIBinding({
-                        get: () => getSortOrders(this.stateManager),
-                        set: async (newValue) => await this.stateManager.store("sort_order", newValue)
-                      }),
-                      allowsMultiselect: false
-                    }),
-                    App.createDUIInputField({
-                      id: "extra_args",
-                      label: "Additional arguments",
-                      value: App.createDUIBinding({
-                        get: () => getExtraArgs(this.stateManager),
-                        set: async (newValue) => {
-                          await this.stateManager.store(
-                            "extra_args",
-                            newValue.replaceAll(/‘|’/g, "'").replaceAll(/“|”/g, '"')
-                          );
-                        }
-                      })
-                    })
-                  ];
-                },
+                rows: async () => [
+                  App.createDUISelect({
+                    id: "languages",
+                    label: "Languages",
+                    options: NHLanguages.getNHCodeList(),
+                    labelResolver: async (option) => NHLanguages.getName(option),
+                    value: languagesBinding,
+                    allowsMultiselect: false
+                  }),
+                  App.createDUISelect({
+                    id: "sort_order",
+                    label: "Default search sort order",
+                    options: NHSortOrders.getNHCodeList(),
+                    labelResolver: async (option) => NHSortOrders.getName(option),
+                    value: sortOrderBinding,
+                    allowsMultiselect: false
+                  }),
+                  App.createDUIInputField({
+                    id: "extra_args",
+                    label: "Additional arguments",
+                    value: extraArgsBinding
+                  })
+                ],
                 isHidden: false
               })
             ]);

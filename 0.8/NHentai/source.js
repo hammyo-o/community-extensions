@@ -1002,28 +1002,6 @@ var _Sources = (() => {
                       get: async () => await stateManager.retrieve("skip_read_manga") ?? false,
                       set: async (newValue) => await stateManager.store("skip_read_manga", newValue)
                     })
-                  }),
-                  App.createDUINavigationButton({
-                    id: "display_read_manga",
-                    label: "Display Read Manga",
-                    onTap: async () => {
-                      const readMangaIds = await stateManager.retrieve("read_manga_ids") ?? {};
-                      const readManga = Object.keys(readMangaIds).map(key => key.replace("read_manga_", ""));
-                      // Implement the logic to display read manga
-                    }
-                  }),
-                  App.createDUIInputField({
-                    id: "min_pages",
-                    label: "Minimum Pages",
-                    value: App.createDUIBinding({
-                      get: async () => {
-                        const minPages = await stateManager.retrieve("min_pages") ?? "0";
-                        return minPages === "0" ? "" : minPages;
-                      },
-                      set: async (newValue) => await stateManager.store("min_pages", newValue || "0")
-                    }),
-                    placeholder: "Minimum Pages",
-                    inputType: "number"
                   })
                 ];
               },
@@ -1340,89 +1318,65 @@ var _Sources = (() => {
             id: "settings",
             label: "Content Settings",
             form: App.createDUIForm({
-              sections: () => {
-                return Promise.resolve([
-                  App.createDUISection({
-                    id: "content",
-                    footer: 'Tags with a space or "-" in them need to be double quoted. \nExample: "love-saber" and -"big breasts"\nTo exclude tags, add a "-" in the front. To include, add a "+".',
-                    rows: async () => {
-                      await Promise.all([
-                        getLanguages(this.stateManager),
-                        getSortOrders(this.stateManager),
-                        getExtraArgs(this.stateManager)
-                      ]);
-                      return [
-                        App.createDUISelect({
-                          id: "languages",
-                          label: "Languages",
-                          options: NHLanguages.getNHCodeList(),
-                          labelResolver: async (option) => NHLanguages.getName(option),
-                          value: App.createDUIBinding({
-                            get: () => getLanguages(this.stateManager),
-                            set: async (newValue) => await this.stateManager.store("languages", newValue)
-                          }),
-                          allowsMultiselect: false
+              sections: () => Promise.resolve([
+                App.createDUISection({
+                  id: "content",
+                  footer: 'Tags with a space or "-" in them need to be double quoted. \nExample: "love-saber" and -"big breasts"\nTo exclude tags, add a "-" in the front. To include, add a "+".',
+                  rows: async () => {
+                    await Promise.all([
+                      getLanguages(this.stateManager),
+                      getSortOrders(this.stateManager),
+                      getExtraArgs(this.stateManager)
+                    ]);
+                    return [
+                      App.createDUISelect({
+                        id: "languages",
+                        label: "Languages",
+                        options: NHLanguages.getNHCodeList(),
+                        labelResolver: async (option) => NHLanguages.getName(option),
+                        value: App.createDUIBinding({
+                          get: () => getLanguages(this.stateManager),
+                          set: async (newValue) => await this.stateManager.store("languages", newValue)
                         }),
-                        App.createDUISelect({
-                          id: "sort_order",
-                          label: "Default search sort order",
-                          options: NHSortOrders.getNHCodeList(),
-                          labelResolver: async (option) => NHSortOrders.getName(option),
-                          value: App.createDUIBinding({
-                            get: () => getSortOrders(this.stateManager),
-                            set: async (newValue) => await this.stateManager.store("sort_order", newValue)
-                          }),
-                          allowsMultiselect: false
+                        allowsMultiselect: false
+                      }),
+                      App.createDUISelect({
+                        id: "sort_order",
+                        label: "Default search sort order",
+                        options: NHSortOrders.getNHCodeList(),
+                        labelResolver: async (option) => NHSortOrders.getName(option),
+                        value: App.createDUIBinding({
+                          get: () => getSortOrders(this.stateManager),
+                          set: async (newValue) => await this.stateManager.store("sort_order", newValue)
                         }),
-                        App.createDUIInputField({
-                          id: "extra_args",
-                          label: "Additional arguments",
-                          value: App.createDUIBinding({
-                            get: () => getExtraArgs(this.stateManager),
-                            set: async (newValue) => {
-                              await this.stateManager.store(
-                                "extra_args",
-                                newValue.replaceAll(/‘|’/g, "'").replaceAll(/“|”/g, '"')
-                              );
-                            }
-                          })
-                        }),
-                        App.createDUISwitch({
-                          id: "skip_read_manga",
-                          label: "Skip Read Manga",
-                          value: App.createDUIBinding({
-                            get: async () => await this.stateManager.retrieve("skip_read_manga") ?? false,
-                            set: async (newValue) => await this.stateManager.store("skip_read_manga", newValue)
-                          })
-                        }),
-                        App.createDUINavigationButton({
-                          id: "display_read_manga",
-                          label: "Display Read Manga",
-                          onTap: async () => {
-                            const readMangaIds = await this.stateManager.retrieve("read_manga_ids") ?? {};
-                            const readManga = Object.keys(readMangaIds).map(key => key.replace("read_manga_", ""));
-                            // Implement the logic to display read manga
+                        allowsMultiselect: false
+                      }),
+                      App.createDUIInputField({
+                        id: "extra_args",
+                        label: "Additional arguments",
+                        value: App.createDUIBinding({
+                          get: () => getExtraArgs(this.stateManager),
+                          set: async (newValue) => {
+                            await this.stateManager.store(
+                              "extra_args",
+                              newValue.replaceAll(/‘|’/g, "'").replaceAll(/“|”/g, '"')
+                            );
                           }
-                        }),
-                        App.createDUIInputField({
-                          id: "min_pages",
-                          label: "Minimum Pages",
-                          value: App.createDUIBinding({
-                            get: async () => {
-                              const minPages = await this.stateManager.retrieve("min_pages") ?? "0";
-                              return minPages === "0" ? "" : minPages;
-                            },
-                            set: async (newValue) => await this.stateManager.store("min_pages", newValue || "0")
-                          }),
-                          placeholder: "Minimum Pages",
-                          inputType: "number"
                         })
-                      ];
-                    },
-                    isHidden: false
-                  })
-                ]);
-              }
+                      }),
+                      App.createDUISwitch({
+                        id: "skip_read_manga",
+                        label: "Skip Read Manga",
+                        value: App.createDUIBinding({
+                          get: async () => await this.stateManager.retrieve("skip_read_manga") ?? false,
+                          set: async (newValue) => await this.stateManager.store("skip_read_manga", newValue)
+                        })
+                      })
+                    ];
+                  },
+                  isHidden: false
+                })
+              ])
             })
           }),
           App.createDUIButton({
@@ -1663,8 +1617,7 @@ Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
       const extraArgsQuery = await this.extraArgs(this.stateManager);
       const pageQuery = query?.pages ? ` pages:${query.pages}` : '';
       const uploadedQuery = query?.uploaded ? ` uploaded:${query.uploaded}` : '';
-      const minPagesQuery = (await this.stateManager.retrieve("min_pages") ?? "0") > 0 ? ` pages:>${await this.stateManager.retrieve("min_pages")}` : '';
-      return encodeURIComponent(`${languageQuery} ${extraArgsQuery} ${pageQuery} ${uploadedQuery} ${minPagesQuery}`);
+      return encodeURIComponent(`${languageQuery} ${extraArgsQuery} ${pageQuery} ${uploadedQuery}`);
     }
     async language(stateManager) {
       const lang = await stateManager.retrieve("languages") ?? "";

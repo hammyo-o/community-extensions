@@ -939,7 +939,8 @@ var _Sources = (() => {
     return await stateManager.retrieve("sort_order") ?? NHSortOrders.getDefault();
   };
   var getExtraArgs = async (stateManager) => {
-    return (await stateManager.retrieve("extra_args")) ?? "";
+    const value = await stateManager.retrieve("extra_args");
+    return typeof value === "string" ? value : "";
   };
   var settings = (stateManager) => {
     return App.createDUINavigationButton({
@@ -1012,6 +1013,13 @@ var _Sources = (() => {
                 ];
               },
               isHidden: false
+            }),
+            App.createDUISection({
+              id: "reset_section",
+              isHidden: false,
+              rows: [
+                resetSettings(stateManager),
+              ],
             })
           ]);
         }
@@ -1348,6 +1356,13 @@ var _Sources = (() => {
                   })
                 ],
                 isHidden: false
+              }),
+              App.createDUISection({
+                id: "reset_section",
+                isHidden: false,
+                rows: [
+                  resetSettings(this.stateManager),
+                ],
               })
             ]);
           }

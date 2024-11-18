@@ -1467,7 +1467,9 @@ var _Sources = (() => {
           }
         });
       } else {
-        const q = encodeURIComponent(`${title} ${query?.includedTags?.map((x) => ` +${x.id}`)} ${await this.generateQuery(query)}`);
+        const includedTags = query?.includedTags?.map(tag => `+${tag.id}`).join(' ') ?? '';
+        const excludedTags = query?.excludedTags?.map(tag => `-${tag.id}`).join(' ') ?? '';
+        const q = encodeURIComponent(`${title} ${includedTags} ${excludedTags} ${await this.generateQuery(query)}`);
         const request = App.createRequest({
           url: `${NHENTAI_URL}/api/galleries/search?query=${q}&page=${page}&sort=${await this.sortOrder(this.stateManager)}`,
           method: "GET"

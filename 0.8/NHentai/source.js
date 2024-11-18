@@ -1003,21 +1003,26 @@ var _Sources = (() => {
                       set: async (newValue) => await stateManager.store("skip_read_manga", newValue)
                     })
                   }),
-                  App.createDUISwitch({
+                  App.createDUINavigationButton({
                     id: "display_read_manga",
                     label: "Display Read Manga",
-                    value: App.createDUIBinding({
-                      get: async () => await stateManager.retrieve("display_read_manga") ?? false,
-                      set: async (newValue) => await stateManager.store("display_read_manga", newValue)
-                    })
+                    onTap: async () => {
+                      const readMangaIds = await stateManager.retrieve("read_manga_ids") ?? {};
+                      const readManga = Object.keys(readMangaIds).map(key => key.replace("read_manga_", ""));
+                      // Implement the logic to display read manga
+                    }
                   }),
                   App.createDUIInputField({
                     id: "min_pages",
                     label: "Minimum Pages",
                     value: App.createDUIBinding({
-                      get: async () => await stateManager.retrieve("min_pages") ?? "0",
-                      set: async (newValue) => await stateManager.store("min_pages", newValue)
+                      get: async () => {
+                        const minPages = await stateManager.retrieve("min_pages") ?? "0";
+                        return minPages === "0" ? "" : minPages;
+                      },
+                      set: async (newValue) => await stateManager.store("min_pages", newValue || "0")
                     }),
+                    placeholder: "Minimum Pages",
                     inputType: "number"
                   })
                 ];

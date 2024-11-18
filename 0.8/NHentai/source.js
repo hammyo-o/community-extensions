@@ -802,6 +802,12 @@ var _Sources = (() => {
           name: "Most Recent",
           NHCode: "date",
           shortcuts: ["s:r", "s:recent", "sort:r", "sort:recent"]
+        },
+        {
+          // Sort by popular this month
+          name: "Popular This Month",
+          NHCode: "popular-month",
+          shortcuts: ["s:pm", "s:m", "s:popular-month", "sort:pm", "sort:m", "sort:popular-month"]
         }
       ];
       this.sortOrders = this.sortOrders.sort((a, b) => a.name > b.name ? 1 : -1);
@@ -854,7 +860,7 @@ var _Sources = (() => {
         image: `https://t.nhentai.net/galleries/${data.media_id}/cover.${typeOfImage(data.images.cover)}`,
         status: "Completed",
         tags: [App.createTagSection({ id: "tags", label: "Tags", tags })],
-        desc: `Pages: ${data.num_pages}`
+        desc: `Pages: ${data.num_pages} - Favorites: ${data.num_favorites}`
       })
     });
   };
@@ -988,6 +994,31 @@ var _Sources = (() => {
                         );
                       }
                     })
+                  }),
+                  App.createDUISwitch({
+                    id: "skip_read_manga",
+                    label: "Skip Read Manga",
+                    value: App.createDUIBinding({
+                      get: async () => await stateManager.retrieve("skip_read_manga") ?? false,
+                      set: async (newValue) => await stateManager.store("skip_read_manga", newValue)
+                    })
+                  }),
+                  App.createDUISwitch({
+                    id: "display_read_manga",
+                    label: "Display Read Manga",
+                    value: App.createDUIBinding({
+                      get: async () => await stateManager.retrieve("display_read_manga") ?? false,
+                      set: async (newValue) => await stateManager.store("display_read_manga", newValue)
+                    })
+                  }),
+                  App.createDUIInputField({
+                    id: "min_pages",
+                    label: "Minimum Pages",
+                    value: App.createDUIBinding({
+                      get: async () => await stateManager.retrieve("min_pages") ?? "0",
+                      set: async (newValue) => await stateManager.store("min_pages", newValue)
+                    }),
+                    inputType: "number"
                   })
                 ];
               },
@@ -1255,7 +1286,7 @@ var _Sources = (() => {
   // src/NHentai/NHentai.ts
   var NHENTAI_URL = "https://nhentai.net";
   var NHentaiInfo = {
-    version: "4.0.82",
+    version: "4.0.85",
     name: "nhentai",
     icon: "icon.png",
     author: "NotMarek & Netsky",
@@ -1301,15 +1332,7 @@ var _Sources = (() => {
         header: "Source Settings",
         rows: () => Promise.resolve([
           settings(this.stateManager),
-          resetSettings(this.stateManager),
-          App.createDUISwitch({
-            id: "skip_read_manga",
-            label: "Skip Read Manga",
-            value: App.createDUIBinding({
-              get: async () => await this.stateManager.retrieve("skip_read_manga") ?? false,
-              set: async (newValue) => await this.stateManager.store("skip_read_manga", newValue)
-            })
-          })
+          resetSettings(this.stateManager)
         ]),
         isHidden: false
       }));
@@ -1351,12 +1374,10 @@ var _Sources = (() => {
       return parseChapterDetails(jsonData, mangaId);
     }
     async getSearchTags() {
-      const arrayTags = [];
-      for (const tag of popularTags) {
-        const label = tag.label;
-        const id = tag.id;
-        arrayTags.push({ id, label });
-      }
+      const arrayTags = popularTags.map(tag => ({
+        id: tag.id,
+        label: tag.label
+      }));
       const tagSections = [App.createTagSection({ id: "0", label: "Tags", tags: arrayTags.map((x) => App.createTag(x)) })];
       return tagSections;
     }
@@ -1389,7 +1410,7 @@ var _Sources = (() => {
           }
         });
       } else {
-        const q = encodeURIComponent(`${title} ${query?.includedTags?.map((x) => ` +${x.id}`)} `) + await this.generateQuery();
+        const q = encodeURIComponent(`${title} ${query?.includedTags?.map((x) => ` +${x.id}`)} ${await this.generateQuery(query)}`);
         const request = App.createRequest({
           url: `${NHENTAI_URL}/api/galleries/search?query=${q}&page=${page}&sort=${await this.sortOrder(this.stateManager)}`,
           method: "GET"
@@ -1408,6 +1429,7 @@ var _Sources = (() => {
     }
     async getHomePageSections(sectionCallback) {
       const skipReadManga = await this.stateManager.retrieve("skip_read_manga") ?? false;
+      const displayReadManga = await this.stateManager.retrieve("display_read_manga") ?? false;
       const readMangaIds = skipReadManga ? await this.getReadMangaIds() : [];
       const sections = [
         {
@@ -1457,6 +1479,18 @@ var _Sources = (() => {
             containsMoreItems: true,
             type: import_types.HomeSectionType.singleRowNormal
           })
+        },
+        {
+          request: App.createRequest({
+            url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=popular`,
+            method: "GET"
+          }),
+          sectionID: App.createHomeSection({
+            id: "popular",
+            title: "Popular All Time",
+            containsMoreItems: true,
+            type: import_types.HomeSectionType.singleRowNormal
+          })
         }
       ];
       const promises = [];
@@ -1469,7 +1503,7 @@ var _Sources = (() => {
             if (hasNoResults(jsonData)) {
               return;
             }
-            section.sectionID.items = parseSearch(jsonData).filter(manga => !readMangaIds.includes(manga.mangaId));
+            section.sectionID.items = parseSearch(jsonData).filter(manga => !readMangaIds.includes(manga.mangaId) || displayReadManga);
             sectionCallback(section.sectionID);
           })
         );
@@ -1521,9 +1555,13 @@ Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
         throw new Error("JSON PARSE ERROR!\n\nYou've like set too many filters in this source's settings, remove some to see results!");
       }
     }
-    async generateQuery() {
-      const query = await this.language(this.stateManager) + await this.extraArgs(this.stateManager);
-      return encodeURIComponent(query);
+    async generateQuery(query) {
+      const languageQuery = await this.language(this.stateManager);
+      const extraArgsQuery = await this.extraArgs(this.stateManager);
+      const pageQuery = query.pages ? ` pages:${query.pages}` : '';
+      const uploadedQuery = query.uploaded ? ` uploaded:${query.uploaded}` : '';
+      const minPagesQuery = (await this.stateManager.retrieve("min_pages") ?? "0") > 0 ? ` pages:>${await this.stateManager.retrieve("min_pages")}` : '';
+      return encodeURIComponent(`${languageQuery} ${extraArgsQuery} ${pageQuery} ${uploadedQuery} ${minPagesQuery}`);
     }
     async language(stateManager) {
       const lang = await stateManager.retrieve("languages") ?? "";

@@ -1622,7 +1622,7 @@ Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
       const extraArgsQuery = await this.extraArgs(this.stateManager);
       const pageQuery = query?.pages ? ` pages:${query.pages}` : '';
       const uploadedQuery = query?.uploaded ? ` uploaded:${query.uploaded}` : '';
-      return `${languageQuery} ${extraArgsQuery} ${pageQuery} ${uploadedQuery}`.trim();
+      return `${languageQuery} ${extraArgsQuery} ${pageQuery} ${uploadedQuery}`.trim().replace(/"/g, '%22');
     }
     async language(stateManager) {
       const lang = await stateManager.retrieve("languages") ?? "";

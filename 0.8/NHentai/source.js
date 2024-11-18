@@ -952,11 +952,10 @@ var _Sources = (() => {
             id: "content",
             footer: 'Tags with a space or "-" in them need to be double quoted. \nExample: "love-saber" and -"big breasts"\nTo exclude tags, add a "-" in the front. To include, add a "+".',
             rows: async () => {
-              await Promise.all([
-                getLanguages(stateManager),
-                getSortOrders(stateManager),
-                getExtraArgs(stateManager)
-              ]);
+              const languages = await getLanguages(stateManager);
+              const sortOrders = await getSortOrders(stateManager);
+              const extraArgs = await getExtraArgs(stateManager);
+
               return [
                 App.createDUISelect({
                   id: "languages",
@@ -964,7 +963,7 @@ var _Sources = (() => {
                   options: NHLanguages.getNHCodeList(),
                   labelResolver: async (option) => NHLanguages.getName(option),
                   value: App.createDUIBinding({
-                    get: () => getLanguages(stateManager),
+                    get: () => languages,
                     set: async (newValue) => {
                       console.log("New value:", JSON.stringify(newValue));
                       if (Array.isArray(newValue)) {
@@ -982,7 +981,7 @@ var _Sources = (() => {
                   options: NHSortOrders.getNHCodeList(),
                   labelResolver: async (option) => NHSortOrders.getName(option),
                   value: App.createDUIBinding({
-                    get: () => getSortOrders(stateManager),
+                    get: () => sortOrders,
                     set: async (newValue) => {
                       console.log("New value:", JSON.stringify(newValue));
                       if (Array.isArray(newValue)) {
@@ -998,10 +997,10 @@ var _Sources = (() => {
                   id: "extra_args",
                   label: "Additional arguments",
                   value: App.createDUIBinding({
-                    get: () => getExtraArgs(stateManager),
+                    get: () => extraArgs,
                     set: async (newValue) => {
                       console.log("New extra_args value:", newValue);
-                      if (isValidExtraArgs(newValue)) {
+                      if (typeof newValue === "string") {
                         await stateManager.store("extra_args", newValue);
                       } else {
                         console.error("Invalid newValue:", newValue);

@@ -1343,7 +1343,9 @@ var _Sources = (() => {
       const response = await this.requestManager.schedule(request, 1);
       this.CloudFlareError(response.status);
       const jsonData = this.parseJson(response);
-      await this.stateManager.store(`read_manga_${mangaId}`, true);
+      const readMangaIds = await this.stateManager.retrieve("read_manga_ids") ?? {};
+      readMangaIds[`read_manga_${mangaId}`] = true;
+      await this.stateManager.store("read_manga_ids", readMangaIds);
       return parseChapterDetails(jsonData, mangaId);
     }
     async getSearchTags() {

@@ -1638,7 +1638,7 @@ Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
     }
     async extraArgs(stateManager) {
       const args = await getExtraArgs(stateManager);
-      return args.split(' ').map(arg => arg.trim()).join(' ');
+      return args ? args.split(/\s+/).map(arg => arg.trim()).join(' ') : '';
     }
     async getReadMangaIds() {
       const allData = await this.stateManager.retrieve("read_manga_ids");

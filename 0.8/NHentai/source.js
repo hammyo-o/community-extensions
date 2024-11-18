@@ -939,7 +939,7 @@ var _Sources = (() => {
     return await stateManager.retrieve("sort_order") ?? NHSortOrders.getDefault();
   };
   var getExtraArgs = async (stateManager) => {
-    return await stateManager.retrieve("extra_args") ?? "";
+    return (await stateManager.retrieve("extra_args")) ?? "";
   };
   var settings = (stateManager) => {
     return App.createDUINavigationButton({
@@ -1023,12 +1023,11 @@ var _Sources = (() => {
       id: "reset",
       label: "Reset to Default",
       onTap: async () => {
-        await Promise.all([
-          stateManager.store("languages", null),
-          stateManager.store("sort_order", null),
-          stateManager.store("extra_args", null)
-        ]);
-      }
+        console.log("Resetting settings to default");
+        await stateManager.store("languages", NHLanguages.getDefault());
+        await stateManager.store("sort_order", NHSortOrders.getDefault());
+        await stateManager.store("extra_args", ""); // Reset extra_args to default
+      },
     });
   };
 

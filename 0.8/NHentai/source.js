@@ -939,7 +939,7 @@ var _Sources = (() => {
     return await stateManager.retrieve("sort_order") ?? NHSortOrders.getDefault();
   };
   var getExtraArgs = async (stateManager) => {
-    return await stateManager.retrieve("extra_args") ?? "-lolicon -shotacon -yaoi";
+    return await stateManager.retrieve("extra_args") ?? "";
   };
   var settings = (stateManager) => {
     return App.createDUINavigationButton({

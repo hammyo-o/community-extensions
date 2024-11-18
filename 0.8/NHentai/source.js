@@ -1,24 +1,24 @@
 "use strict";
+import {
+  SourceManga,
+  ChapterDetails,
+  PartialSourceManga,
+  Tag,
+  Chapter
+} from '@paperback/types';
+
+import { NHLanguages } from './NHentaiHelper';
+
+import {
+  Gallery,
+  ImagePageObject,
+  QueryResponse,
+  TagObject
+} from './NHentaiInterfaces';
+
 var _Sources = (() => {
   var __create = Object.create;
   var __defProp = Object.defineProperty;
-  var __getOwnPropDesc = Object.getOwnPropertyDescriptor;
-  var __getOwnPropNames = Object.getOwnPropertyNames;
-  var __getProtoOf = Object.getPrototypeOf;
-  var __hasOwnProp = Object.prototype.hasOwnProperty;
-  var __commonJS = (cb, mod) => function __require() {
-    return mod || (0, cb[__getOwnPropNames(cb)[0]])((mod = { exports: {} }).exports, mod), mod.exports;
-  };
-  var __export = (target, all) => {
-    for (var name in all)
-      __defProp(target, name, { get: all[name], enumerable: true });
-  };
-  var __copyProps = (to, from, except, desc) => {
-    if (from && typeof from === "object" || typeof from === "function") {
-      for (let key of __getOwnPropNames(from))
-        if (!__hasOwnProp.call(to, key) && key !== except)
-          __defProp(to, key, { get: () => from[key], enumerable: !(desc = __getOwnPropDesc(from, key)) || desc.enumerable });
-    }
     return to;
   };
   var __toESM = (mod, isNodeMode, target) => (target = mod != null ? __create(__getProtoOf(mod)) : {}, __copyProps(
@@ -1317,82 +1317,8 @@ var _Sources = (() => {
         id: "main",
         header: "Source Settings",
         rows: () => Promise.resolve([
-          App.createDUINavigationButton({
-            id: "settings",
-            label: "Content Settings",
-            form: App.createDUIForm({
-              sections: () => Promise.resolve([
-                App.createDUISection({
-                  id: "content",
-                  footer: 'Tags with a space or "-" in them need to be double quoted. \nExample: "love-saber" and -"big breasts"\nTo exclude tags, add a "-" in the front. To include, add a "+".',
-                  rows: async () => {
-                    await Promise.all([
-                      getLanguages(this.stateManager),
-                      getSortOrders(this.stateManager),
-                      getExtraArgs(this.stateManager)
-                    ]);
-                    return [
-                      App.createDUISelect({
-                        id: "languages",
-                        label: "Languages",
-                        options: NHLanguages.getNHCodeList(),
-                        labelResolver: async (option) => NHLanguages.getName(option),
-                        value: App.createDUIBinding({
-                          get: () => getLanguages(this.stateManager),
-                          set: async (newValue) => await this.stateManager.store("languages", newValue)
-                        }),
-                        allowsMultiselect: false
-                      }),
-                      App.createDUISelect({
-                        id: "sort_order",
-                        label: "Default search sort order",
-                        options: NHSortOrders.getNHCodeList(),
-                        labelResolver: async (option) => NHSortOrders.getName(option),
-                        value: App.createDUIBinding({
-                          get: () => getSortOrders(this.stateManager),
-                          set: async (newValue) => await this.stateManager.store("sort_order", newValue)
-                        }),
-                        allowsMultiselect: false
-                      }),
-                      App.createDUIInputField({
-                        id: "extra_args",
-                        label: "Additional arguments",
-                        value: App.createDUIBinding({
-                          get: () => getExtraArgs(this.stateManager),
-                          set: async (newValue) => {
-                            await this.stateManager.store(
-                              "extra_args",
-                              newValue.replaceAll(/‘|’/g, "'").replaceAll(/“|”/g, '"')
-                            );
-                          }
-                        })
-                      }),
-                      App.createDUISwitch({
-                        id: "skip_read_manga",
-                        label: "Skip Read Manga",
-                        value: App.createDUIBinding({
-                          get: async () => await this.stateManager.retrieve("skip_read_manga") ?? false,
-                          set: async (newValue) => await this.stateManager.store("skip_read_manga", newValue)
-                        })
-                      })
-                    ];
-                  },
-                  isHidden: false
-                })
-              ])
-            })
-          }),
-          App.createDUIButton({
-            id: "reset",
-            label: "Reset to Default",
-            onTap: async () => {
-              await Promise.all([
-                this.stateManager.store("languages", null),
-                this.stateManager.store("sort_order", null),
-                this.stateManager.store("extra_args", null)
-              ]);
-            }
-          })
+          settings(this.stateManager),
+          resetSettings(this.stateManager)
         ]),
         isHidden: false
       }));
@@ -1638,7 +1564,7 @@ Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
     }
     async extraArgs(stateManager) {
       const args = await getExtraArgs(stateManager);
-      return args ? ` ${args.split(/\s+/).map(arg => encodeURIComponent(arg.trim())).join(' ')}` : '';
+      return args ? ` ${args.split(/\s+/).map(arg => encodeURIComponent(arg.trim().replace(/"/g, '%22'))).join(' ')}` : '';
     }
     async getReadMangaIds() {
       const allData = await this.stateManager.retrieve("read_manga_ids");

@@ -897,7 +897,7 @@ var _Sources = (() => {
         image: `https://t.nhentai.net/galleries/${gallery.media_id}/cover.${typeOfImage(gallery.images.cover)}`,
         title: gallery.title.pretty,
         mangaId: gallery.id.toString(),
-        subtitle: `${NHLanguages.getName(getLanguage(gallery)).substring(0, 3)}, Pg. ${gallery.num_pages}`
+        subtitle: `${NHLanguages.getName(getLanguage(gallery)).substring(0, 3)} - Pgs. ${gallery.num_pages}`
       }));
       collectedIds.push(gallery.id.toString());
     }
@@ -1275,6 +1275,108 @@ var _Sources = (() => {
       }
     ]
   };
+  var NHentaiSettings = class {
+    constructor(stateManager) {
+      this.stateManager = stateManager;
+      this.settingsForm = null;
+    }
+
+    async getSettingsForm() {
+      if (!this.settingsForm) {
+        this.settingsForm = App.createDUIForm({
+          sections: () => {
+            return Promise.resolve([
+              App.createDUISection({
+                id: "content",
+                footer: 'Tags with a space or "-" in them need to be double quoted. \nExample: "love-saber" and -"big breasts"\nTo exclude tags, add a "-" in the front. To include, add a "+".',
+                rows: async () => {
+                  await Promise.all([
+                    getLanguages(this.stateManager),
+                    getSortOrders(this.stateManager),
+                    getExtraArgs(this.stateManager)
+                  ]);
+                  return await [
+                    App.createDUISelect({
+                      id: "languages",
+                      label: "Languages",
+                      options: NHLanguages.getNHCodeList(),
+                      labelResolver: async (option) => NHLanguages.getName(option),
+                      value: App.createDUIBinding({
+                        get: () => getLanguages(this.stateManager),
+                        set: async (newValue) => await this.stateManager.store("languages", newValue)
+                      }),
+                      allowsMultiselect: false
+                    }),
+                    App.createDUISelect({
+                      id: "sort_order",
+                      label: "Default search sort order",
+                      options: NHSortOrders.getNHCodeList(),
+                      labelResolver: async (option) => NHSortOrders.getName(option),
+                      value: App.createDUIBinding({
+                        get: () => getSortOrders(this.stateManager),
+                        set: async (newValue) => await this.stateManager.store("sort_order", newValue)
+                      }),
+                      allowsMultiselect: false
+                    }),
+                    App.createDUIInputField({
+                      id: "extra_args",
+                      label: "Additional arguments",
+                      value: App.createDUIBinding({
+                        get: () => getExtraArgs(this.stateManager),
+                        set: async (newValue) => {
+                          await this.stateManager.store(
+                            "extra_args",
+                            newValue.replaceAll(/‘|’/g, "'").replaceAll(/“|”/g, '"')
+                          );
+                        }
+                      })
+                    })
+                  ];
+                },
+                isHidden: false
+              })
+            ]);
+          }
+        });
+      }
+      return this.settingsForm;
+    }
+
+    async getSourceMenu() {
+      return Promise.resolve(App.createDUISection({
+        id: "main",
+        header: "Source Settings",
+        rows: () => Promise.resolve([
+          App.createDUINavigationButton({
+            id: "settings",
+            label: "Content Settings",
+            form: this.getSettingsForm()
+          }),
+          App.createDUIButton({
+            id: "reset",
+            label: "Reset to Default",
+            onTap: async () => {
+              await Promise.all([
+                this.stateManager.store("languages", null),
+                this.stateManager.store("sort_order", null),
+                this.stateManager.store("extra_args", null)
+              ]);
+            }
+          }),
+          App.createDUISwitch({
+            id: "skip_read_manga",
+            label: "Skip Read Manga",
+            value: App.createDUIBinding({
+              get: async () => await this.stateManager.retrieve("skip_read_manga") ?? false,
+              set: async (newValue) => await this.stateManager.store("skip_read_manga", newValue)
+            })
+          })
+        ]),
+        isHidden: false
+      }));
+    }
+  };
+
   var NHentai = class _NHentai {
     constructor() {
       this.requestManager = App.createRequestManager({
@@ -1297,27 +1399,14 @@ var _Sources = (() => {
         }
       });
       this.stateManager = App.createSourceStateManager();
+      this.settings = new NHentaiSettings(this.stateManager);
     }
+
     // Sourrce Settings
     async getSourceMenu() {
-      return Promise.resolve(App.createDUISection({
-        id: "main",
-        header: "Source Settings",
-        rows: () => Promise.resolve([
-          settings(this.stateManager),
-          resetSettings(this.stateManager),
-          App.createDUISwitch({
-            id: "skip_read_manga",
-            label: "Skip Read Manga",
-            value: App.createDUIBinding({
-              get: async () => await this.stateManager.retrieve("skip_read_manga") ?? false,
-              set: async (newValue) => await this.stateManager.store("skip_read_manga", newValue)
-            })
-          })
-        ]),
-        isHidden: false
-      }));
+      return this.settings.getSourceMenu();
     }
+
     getMangaShareUrl(mangaId) {
       return `${NHENTAI_URL}/g/${mangaId}`;
     }

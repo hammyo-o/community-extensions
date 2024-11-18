@@ -1563,8 +1563,8 @@ Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
     async generateQuery(query) {
       const languageQuery = await this.language(this.stateManager);
       const extraArgsQuery = await this.extraArgs(this.stateManager);
-      const pageQuery = query.pages ? ` pages:${query.pages}` : '';
-      const uploadedQuery = query.uploaded ? ` uploaded:${query.uploaded}` : '';
+      const pageQuery = query?.pages ? ` pages:${query.pages}` : '';
+      const uploadedQuery = query?.uploaded ? ` uploaded:${query.uploaded}` : '';
       const minPagesQuery = (await this.stateManager.retrieve("min_pages") ?? "0") > 0 ? ` pages:>${await this.stateManager.retrieve("min_pages")}` : '';
       return encodeURIComponent(`${languageQuery} ${extraArgsQuery} ${pageQuery} ${uploadedQuery} ${minPagesQuery}`);
     }

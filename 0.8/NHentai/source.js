@@ -1253,7 +1253,7 @@ var _Sources = (() => {
   // src/NHentai/NHentai.ts
   var NHENTAI_URL = "https://nhentai.net";
   var NHentaiInfo = {
-    version: "4.0.815",
+    version: "4.0.82",
     name: "nhentai",
     icon: "icon.png",
     author: "NotMarek & Netsky",

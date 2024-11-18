@@ -1469,9 +1469,9 @@ var _Sources = (() => {
       } else {
         const includedTags = query?.includedTags?.map(tag => `+${tag.id}`).join(' ') ?? '';
         const excludedTags = query?.excludedTags?.map(tag => `-${tag.id}`).join(' ') ?? '';
-        const q = encodeURIComponent(`${title} ${includedTags} ${excludedTags} ${await this.generateQuery(query)}`);
+        const q = `${title} ${includedTags} ${excludedTags} ${await this.generateQuery(query)}`;
         const request = App.createRequest({
-          url: `${NHENTAI_URL}/api/galleries/search?query=${q}&page=${page}&sort=${await this.sortOrder(this.stateManager)}`,
+          url: `${NHENTAI_URL}/api/galleries/search?query=${encodeURIComponent(q)}&page=${page}&sort=${await this.sortOrder(this.stateManager)}`,
           method: "GET"
         });
         const response = await this.requestManager.schedule(request, 1);

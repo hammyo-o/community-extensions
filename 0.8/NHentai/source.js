@@ -806,7 +806,7 @@ var _Sources = (() => {
         {
           // Sort by popular this month
           name: "Popular This Month",
-          NHCode: "month",
+          NHCode: "popular-month",
           shortcuts: ["s:pm", "s:m", "s:popular-month", "sort:pm", "sort:m", "sort:popular-month"]
         }
       ];
@@ -847,8 +847,7 @@ var _Sources = (() => {
     const artist = getArtist(data);
     const tags = [];
     for (const tag of data.tags) {
-      if (tag.type !== "tag")
-        continue;
+      if (tag.type !== "tag") continue;
       tags.push(App.createTag({ id: tag.name, label: capitalizeTags(tag.name) }));
     }
     return App.createSourceManga({
@@ -860,7 +859,7 @@ var _Sources = (() => {
         image: `https://t.nhentai.net/galleries/${data.media_id}/cover.${typeOfImage(data.images.cover)}`,
         status: "Completed",
         tags: [App.createTagSection({ id: "tags", label: "Tags", tags })],
-        desc: `Pages: ${data.num_pages}, Favorites: ${data.num_favorites}`
+        desc: `Pages: ${data.num_pages} - Favorites: ${data.num_favorites}`
       })
     });
   };
@@ -891,8 +890,7 @@ var _Sources = (() => {
       throw new Error("JSON NO RESULT ERROR!\n\nYou've like set too many additional arguments in this source's settings, remove some to see results!\nSo search with tags you need to use arguments like shown in the sourc's settings!");
     }
     for (const gallery of data.result) {
-      if (collectedIds.includes(gallery.id.toString()))
-        continue;
+      if (collectedIds.includes(gallery.id.toString())) continue;
       tiles.push(App.createPartialSourceManga({
         image: `https://t.nhentai.net/galleries/${gallery.media_id}/cover.${typeOfImage(gallery.images.cover)}`,
         title: gallery.title.pretty,
@@ -947,79 +945,67 @@ var _Sources = (() => {
       id: "settings",
       label: "Content Settings",
       form: App.createDUIForm({
-        sections: () => [
-          App.createDUISection({
-            id: "content",
-            footer: 'Tags with a space or "-" in them need to be double quoted. \nExample: "love-saber" and -"big breasts"\nTo exclude tags, add a "-" in the front. To include, add a "+".',
-            rows: async () => {
-              const languages = await getLanguages(stateManager);
-              const sortOrders = await getSortOrders(stateManager);
-              const extraArgs = await getExtraArgs(stateManager);
-
-              return [
-                App.createDUISelect({
-                  id: "languages",
-                  label: "Languages",
-                  options: NHLanguages.getNHCodeList(),
-                  labelResolver: async (option) => NHLanguages.getName(option),
-                  value: App.createDUIBinding({
-                    get: () => languages,
-                    set: async (newValue) => {
-                      console.log("New value:", JSON.stringify(newValue));
-                      if (Array.isArray(newValue)) {
-                        await stateManager.store("languages", newValue);
-                      } else {
-                        console.error("Invalid newValue:", newValue);
-                      }
-                    }
+        sections: () => {
+          return Promise.resolve([
+            App.createDUISection({
+              id: "content",
+              footer: 'Tags with a space or "-" in them need to be double quoted. \nExample: "love-saber" and -"big breasts"\nTo exclude tags, add a "-" in the front. To include, add a "+".',
+              rows: async () => {
+                await Promise.all([
+                  getLanguages(stateManager),
+                  getSortOrders(stateManager),
+                  getExtraArgs(stateManager)
+                ]);
+                return await [
+                  App.createDUISelect({
+                    id: "languages",
+                    label: "Languages",
+                    options: NHLanguages.getNHCodeList(),
+                    labelResolver: async (option) => NHLanguages.getName(option),
+                    value: App.createDUIBinding({
+                      get: () => getLanguages(stateManager),
+                      set: async (newValue) => await stateManager.store("languages", newValue)
+                    }),
+                    allowsMultiselect: false
                   }),
-                  allowsMultiselect: false
-                }),
-                App.createDUISelect({
-                  id: "sort_order",
-                  label: "Default search sort order",
-                  options: NHSortOrders.getNHCodeList(),
-                  labelResolver: async (option) => NHSortOrders.getName(option),
-                  value: App.createDUIBinding({
-                    get: () => sortOrders,
-                    set: async (newValue) => {
-                      console.log("New value:", JSON.stringify(newValue));
-                      if (Array.isArray(newValue)) {
-                        await stateManager.store("sort_order", newValue);
-                      } else {
-                        console.error("Invalid newValue:", newValue);
-                      }
-                    }
+                  App.createDUISelect({
+                    id: "sort_order",
+                    label: "Default search sort order",
+                    options: NHSortOrders.getNHCodeList(),
+                    labelResolver: async (option) => NHSortOrders.getName(option),
+                    value: App.createDUIBinding({
+                      get: () => getSortOrders(stateManager),
+                      set: async (newValue) => await stateManager.store("sort_order", newValue)
+                    }),
+                    allowsMultiselect: false
                   }),
-                  allowsMultiselect: false
-                }),
-                App.createDUIInputField({
-                  id: "extra_args",
-                  label: "Additional arguments",
-                  value: App.createDUIBinding({
-                    get: () => extraArgs,
-                    set: async (newValue) => {
-                      console.log("New extra_args value:", newValue);
-                      if (typeof newValue === "string") {
-                        await stateManager.store("extra_args", newValue);
-                      } else {
-                        console.error("Invalid newValue:", newValue);
+                  App.createDUIInputField({
+                    id: "extra_args",
+                    label: "Additional arguments",
+                    value: App.createDUIBinding({
+                      get: () => getExtraArgs(stateManager),
+                      set: async (newValue) => {
+                        await stateManager.store(
+                          "extra_args",
+                          newValue.replaceAll(/‘|’/g, "'").replaceAll(/“|”/g, '"')
+                        );
                       }
-                    }
+                    })
+                  }),
+                  App.createDUISwitch({
+                    id: "skip_read_manga",
+                    label: "Skip Read Manga",
+                    value: App.createDUIBinding({
+                      get: async () => await stateManager.retrieve("skip_read_manga") ?? false,
+                      set: async (newValue) => await stateManager.store("skip_read_manga", newValue)
+                    })
                   })
-                })
-              ];
-            },
-            isHidden: false
-          }),
-          App.createDUISection({
-            id: "reset_section",
-            isHidden: false,
-            rows: async () => [
-              resetSettings(stateManager),
-            ],
-          })
-        ],
+                ];
+              },
+              isHidden: false
+            })
+          ]);
+        }
       })
     });
   };
@@ -1028,11 +1014,12 @@ var _Sources = (() => {
       id: "reset",
       label: "Reset to Default",
       onTap: async () => {
-        console.log("Resetting settings to default");
-        await stateManager.store("languages", NHLanguages.getDefault());
-        await stateManager.store("sort_order", NHSortOrders.getDefault());
-        await stateManager.store("extra_args", ""); // Reset extra_args to default
-      },
+        await Promise.all([
+          stateManager.store("languages", null),
+          stateManager.store("sort_order", null),
+          stateManager.store("extra_args", null)
+        ]);
+      }
     });
   };
 
@@ -1295,114 +1282,6 @@ var _Sources = (() => {
       }
     ]
   };
-  var NHentaiSettings = class {
-    constructor(stateManager) {
-      this.stateManager = stateManager;
-      this.settingsForm = null;
-    }
-
-    async getSettingsForm() {
-      if (!this.settingsForm) {
-        const languagesBinding = App.createDUIBinding({
-          get: () => getLanguages(this.stateManager),
-          set: async (newValue) => await this.stateManager.store("languages", newValue)
-        });
-
-        const sortOrderBinding = App.createDUIBinding({
-          get: () => getSortOrders(this.stateManager),
-          set: async (newValue) => await this.stateManager.store("sort_order", newValue)
-        });
-
-        const extraArgsBinding = App.createDUIBinding({
-          get: () => getExtraArgs(this.stateManager),
-          set: async (newValue) => {
-            await this.stateManager.store(
-              "extra_args",
-              newValue.replaceAll(/‘|’/g, "'").replaceAll(/“|”/g, '"')
-            );
-          }
-        });
-
-        this.settingsForm = App.createDUIForm({
-          sections: () => {
-            return Promise.resolve([
-              App.createDUISection({
-                id: "content",
-                footer: 'Tags with a space or "-" in them need to be double quoted. \nExample: "love-saber" and -"big breasts"\nTo exclude tags, add a "-" in the front. To include, add a "+".',
-                rows: async () => [
-                  App.createDUISelect({
-                    id: "languages",
-                    label: "Languages",
-                    options: NHLanguages.getNHCodeList(),
-                    labelResolver: async (option) => NHLanguages.getName(option),
-                    value: languagesBinding,
-                    allowsMultiselect: false
-                  }),
-                  App.createDUISelect({
-                    id: "sort_order",
-                    label: "Default search sort order",
-                    options: NHSortOrders.getNHCodeList(),
-                    labelResolver: async (option) => NHSortOrders.getName(option),
-                    value: sortOrderBinding,
-                    allowsMultiselect: false
-                  }),
-                  App.createDUIInputField({
-                    id: "extra_args",
-                    label: "Additional arguments",
-                    value: extraArgsBinding
-                  })
-                ],
-                isHidden: false
-              }),
-              App.createDUISection({
-                id: "reset_section",
-                isHidden: false,
-                rows: async () => [
-                  resetSettings(this.stateManager),
-                ],
-              })
-            ]);
-          }
-        });
-      }
-      return this.settingsForm;
-    }
-
-    async getSourceMenu() {
-      return Promise.resolve(App.createDUISection({
-        id: "main",
-        header: "Source Settings",
-        rows: async () => [
-          App.createDUINavigationButton({
-            id: "settings",
-            label: "Content Settings",
-            form: await this.getSettingsForm()
-          }),
-          App.createDUIButton({
-            id: "reset",
-            label: "Reset to Default",
-            onTap: async () => {
-              await Promise.all([
-                this.stateManager.store("languages", null),
-                this.stateManager.store("sort_order", null),
-                this.stateManager.store("extra_args", null)
-              ]);
-            }
-          }),
-          App.createDUISwitch({
-            id: "skip_read_manga",
-            label: "Skip Read Manga",
-            value: App.createDUIBinding({
-              get: async () => await this.stateManager.retrieve("skip_read_manga") ?? false,
-              set: async (newValue) => await this.stateManager.store("skip_read_manga", newValue)
-            })
-          })
-        ],
-        isHidden: false
-      }));
-    }
-  };
-
   var NHentai = class _NHentai {
     constructor() {
       this.requestManager = App.createRequestManager({
@@ -1425,14 +1304,19 @@ var _Sources = (() => {
         }
       });
       this.stateManager = App.createSourceStateManager();
-      this.settings = new NHentaiSettings(this.stateManager);
     }
-
-    // Sourrce Settings
+    // Source Settings
     async getSourceMenu() {
-      return this.settings.getSourceMenu();
+      return Promise.resolve(App.createDUISection({
+        id: "main",
+        header: "Source Settings",
+        rows: () => Promise.resolve([
+          settings(this.stateManager),
+          resetSettings(this.stateManager)
+        ]),
+        isHidden: false
+      }));
     }
-
     getMangaShareUrl(mangaId) {
       return `${NHENTAI_URL}/g/${mangaId}`;
     }
@@ -1464,10 +1348,14 @@ var _Sources = (() => {
       const response = await this.requestManager.schedule(request, 1);
       this.CloudFlareError(response.status);
       const jsonData = this.parseJson(response);
+      await this.addToReadMangaIds(mangaId);
+      return parseChapterDetails(jsonData, mangaId);
+    }
+    // Method to store read manga IDs
+    async addToReadMangaIds(mangaId) {
       const readMangaIds = await this.stateManager.retrieve("read_manga_ids") ?? {};
       readMangaIds[`read_manga_${mangaId}`] = true;
       await this.stateManager.store("read_manga_ids", readMangaIds);
-      return parseChapterDetails(jsonData, mangaId);
     }
     async getSearchTags() {
       const arrayTags = [];
@@ -1516,7 +1404,7 @@ var _Sources = (() => {
         const response = await this.requestManager.schedule(request, 1);
         this.CloudFlareError(response.status);
         const jsonData = this.parseJson(response);
-        const results = parseSearch(jsonData).filter(manga => !readMangaIds.includes(manga.mangaId));
+        const results = parseSearch(jsonData).filter((manga) => !readMangaIds.includes(manga.mangaId));
         return App.createPagedResults({
           results,
           metadata: {
@@ -1600,7 +1488,7 @@ var _Sources = (() => {
             if (hasNoResults(jsonData)) {
               return;
             }
-            section.sectionID.items = parseSearch(jsonData).filter(manga => !readMangaIds.includes(manga.mangaId));
+            section.sectionID.items = parseSearch(jsonData).filter((manga) => !readMangaIds.includes(manga.mangaId));
             sectionCallback(section.sectionID);
           })
         );
@@ -1619,13 +1507,20 @@ var _Sources = (() => {
       this.CloudFlareError(response.status);
       const jsonData = this.parseJson(response);
       page++;
-      const results = parseSearch(jsonData).filter(manga => !readMangaIds.includes(manga.mangaId));
+      const results = parseSearch(jsonData).filter((manga) => !readMangaIds.includes(manga.mangaId));
       return App.createPagedResults({
         results,
         metadata: {
           page
         }
       });
+    }
+    async getReadMangaIds() {
+      const allData = await this.stateManager.retrieve("read_manga_ids");
+      if (!allData) {
+        return [];
+      }
+      return Object.keys(allData).filter((key) => key.startsWith("read_manga_")).map((key) => key.replace("read_manga_", ""));
     }
     CloudFlareError(status) {
       if (status == 503 || status == 403) {
@@ -1671,13 +1566,6 @@ Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
     async extraArgs(stateManager) {
       const args = await getExtraArgs(stateManager);
       return ` ${args}`;
-    }
-    async getReadMangaIds() {
-      const allData = await this.stateManager.retrieve("read_manga_ids");
-      if (!allData) {
-        return [];
-      }
-      return Object.keys(allData).filter(key => key.startsWith("read_manga_")).map(key => key.replace("read_manga_", ""));
     }
   };
   return __toCommonJS(NHentai_exports);

@@ -1546,7 +1546,8 @@ Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
       const langQuery = await this.language(this.stateManager);
       const extraArgs = await this.extraArgs(this.stateManager);
       const minPages = await this.stateManager.retrieve("min_pages") ?? 0;
-      return encodeURIComponent(`${langQuery} ${extraArgs} pages:>${minPages}`);
+      const minPagesQuery = minPages ? `pages:>${minPages}` : "";
+      return encodeURIComponent(`${langQuery} ${extraArgs} ${minPagesQuery}`.trim());
     }
     async language(stateManager) {
       const lang = await stateManager.retrieve("languages") ?? "";

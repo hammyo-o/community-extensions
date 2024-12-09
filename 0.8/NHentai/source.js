@@ -802,12 +802,6 @@ var _Sources = (() => {
           name: "Most Recent",
           NHCode: "date",
           shortcuts: ["s:r", "s:recent", "sort:r", "sort:recent"]
-        },
-        {
-          // Sort by popular this month
-          name: "Popular This Month",
-          NHCode: "popular-month",
-          shortcuts: ["s:pm", "s:m", "s:popular-month", "sort:pm", "sort:m", "sort:popular-month"]
         }
       ];
       this.sortOrders = this.sortOrders.sort((a, b) => a.name > b.name ? 1 : -1);
@@ -882,15 +876,15 @@ var _Sources = (() => {
       })
     });
   };
-  var parseSearch = (data, readMangaIds) => {
+  var parseSearch = (data) => {
     const tiles = [];
     const collectedIds = [];
     if (!data?.result) {
       console.log(JSON.stringify(data));
-      throw new Error("JSON NO RESULT ERROR!\n\nYou've like set too many additional arguments in this source's settings, remove some to see results!\nSo search with tags you need to use arguments like shown in the source's settings!");
+      throw new Error("JSON NO RESULT ERROR!\n\nYou've like set too many additional arguments in this source's settings, remove some to see results!\nSo search with tags you need to use arguments like shown in the sourc's settings!");
     }
     for (const gallery of data.result) {
-      if (collectedIds.includes(gallery.id.toString()) || readMangaIds.includes(gallery.id.toString())) continue;
+      if (collectedIds.includes(gallery.id.toString())) continue;
       tiles.push(App.createPartialSourceManga({
         image: `https://t3.nhentai.net/galleries/${gallery.media_id}/cover.${typeOfImage(gallery.images.cover)}`,
         title: gallery.title.pretty,

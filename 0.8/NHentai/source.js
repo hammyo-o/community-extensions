@@ -856,7 +856,7 @@ var _Sources = (() => {
         titles: Object.values(data.title).filter((title) => title !== null),
         artist,
         author: artist,
-        image: getThumbnailUrl(data.media_id, data.images.cover),
+        image: `https://t3.nhentai.net/galleries/${data.media_id}/cover.${typeOfImage(data.images.cover)}`,
         status: "Completed",
         tags: [App.createTagSection({ id: "tags", label: "Tags", tags })],
         desc: `Pages: ${data.num_pages} | Favorites: ${data.num_favorites}`
@@ -877,7 +877,8 @@ var _Sources = (() => {
       id: mangaId,
       mangaId,
       pages: data.images.pages.map((image, i) => {
-        return getPageUrl(data.media_id, i + 1, image);
+        const type = typeOfImage(image);
+        return `https://i4.nhentai.net/galleries/${data.media_id}/${i + 1}.${type}`;
       })
     });
   };
@@ -891,7 +892,7 @@ var _Sources = (() => {
     for (const gallery of data.result) {
       if (collectedIds.includes(gallery.id.toString()) || readMangaIds.includes(gallery.id.toString())) continue;
       tiles.push(App.createPartialSourceManga({
-        image: getThumbnailUrl(gallery.media_id, gallery.images.cover),
+        image: `https://t3.nhentai.net/galleries/${gallery.media_id}/cover.${typeOfImage(gallery.images.cover)}`,
         title: gallery.title.pretty,
         mangaId: gallery.id.toString(),
         subtitle: NHLanguages.getName(getLanguage(gallery)).substring(0, 3) + " | Pgs: " + gallery.num_pages
@@ -899,11 +900,6 @@ var _Sources = (() => {
       collectedIds.push(gallery.id.toString());
     }
     return tiles;
-  };
-  var addToReadMangaIds = async (stateManager, mangaId) => {
-    const readMangaIds = await stateManager.retrieve("read_manga_ids") ?? {};
-    readMangaIds[mangaId] = true;
-    await stateManager.store("read_manga_ids", readMangaIds);
   };
   function capitalizeTags(str) {
     return str.split(" ").map((word) => {
@@ -913,12 +909,6 @@ var _Sources = (() => {
   var typeMap = { "j": "jpg", "p": "png", "g": "gif", "w": "webp" };
   var typeOfImage = (image) => {
     return typeMap[image.t] ?? "";
-  };
-  var getThumbnailUrl = (mediaId, image) => {
-    return `https://t3.nhentai.net/galleries/${mediaId}/cover.${typeOfImage(image)}`;
-  };
-  var getPageUrl = (mediaId, pageNumber, image) => {
-    return `https://i4.nhentai.net/galleries/${mediaId}/${pageNumber}.${typeOfImage(image)}`;
   };
   var getArtist = (gallery) => {
     const tags = gallery.tags;
@@ -949,9 +939,6 @@ var _Sources = (() => {
   var getExtraArgs = async (stateManager) => {
     return await stateManager.retrieve("extra_args") ?? "-lolicon -shotacon -yaoi";
   };
-  var getMinPages = async (stateManager) => {
-    return await stateManager.retrieve("min_pages") ?? 0;
-  };
   var settings = (stateManager) => {
     return App.createDUINavigationButton({
       id: "settings",
@@ -966,10 +953,9 @@ var _Sources = (() => {
                 await Promise.all([
                   getLanguages(stateManager),
                   getSortOrders(stateManager),
-                  getExtraArgs(stateManager),
-                  getMinPages(stateManager)
+                  getExtraArgs(stateManager)
                 ]);
-                return [
+                return await [
                   App.createDUISelect({
                     id: "languages",
                     label: "Languages",
@@ -1004,22 +990,6 @@ var _Sources = (() => {
                         );
                       }
                     })
-                  }),
-                  App.createDUISwitch({
-                    id: "skip_read_manga",
-                    label: "Skip Read Manga",
-                    value: App.createDUIBinding({
-                      get: async () => await stateManager.retrieve("skip_read_manga") ?? false,
-                      set: async (newValue) => await stateManager.store("skip_read_manga", newValue)
-                    })
-                  }),
-                  App.createDUIInputField({
-                    id: "min_pages",
-                    label: "Minimum Pages",
-                    value: App.createDUIBinding({
-                      get: () => getMinPages(stateManager),
-                      set: async (newValue) => await stateManager.store("min_pages", newValue)
-                    })
                   })
                 ];
               },
@@ -1038,8 +1008,7 @@ var _Sources = (() => {
         await Promise.all([
           stateManager.store("languages", null),
           stateManager.store("sort_order", null),
-          stateManager.store("extra_args", null),
-          stateManager.store("min_pages", null)
+          stateManager.store("extra_args", null)
         ]);
       }
     });
@@ -1288,7 +1257,7 @@ var _Sources = (() => {
   // src/NHentai/NHentai.ts
   var NHENTAI_URL = "https://nhentai.net";
   var NHentaiInfo = {
-    version: "4.0.9",
+    version: "4.0.8",
     name: "nhentai",
     icon: "icon.png",
     author: "NotMarek & Netsky",
@@ -1327,7 +1296,7 @@ var _Sources = (() => {
       });
       this.stateManager = App.createSourceStateManager();
     }
-    // Source Settings
+    // Sourrce Settings
     async getSourceMenu() {
       return Promise.resolve(App.createDUISection({
         id: "main",
@@ -1370,7 +1339,6 @@ var _Sources = (() => {
       const response = await this.requestManager.schedule(request, 1);
       this.CloudFlareError(response.status);
       const jsonData = this.parseJson(response);
-      await addToReadMangaIds(this.stateManager, mangaId);
       return parseChapterDetails(jsonData, mangaId);
     }
     async getSearchTags() {
@@ -1386,8 +1354,6 @@ var _Sources = (() => {
     async getSearchResults(query, metadata) {
       const page = metadata?.page ?? 1;
       const title = query.title ?? "";
-      const skipReadManga = await this.stateManager.retrieve("skip_read_manga") ?? false;
-      const readMangaIds = skipReadManga ? await this.getReadMangaIds() : [];
       if (metadata?.stopSearch ?? false) {
         return App.createPagedResults({
           results: [],
@@ -1396,26 +1362,39 @@ var _Sources = (() => {
           }
         });
       }
-      const q = encodeURIComponent(`${title} ${query?.includedTags?.map((x) => ` +${x.id}`)} `) + await this.generateQuery();
-      const request = App.createRequest({
-        url: `${NHENTAI_URL}/api/galleries/search?query=${q}&page=${page}&sort=${await this.sortOrder(this.stateManager)}`,
-        method: "GET"
-      });
-      const response = await this.requestManager.schedule(request, 1);
-      this.CloudFlareError(response.status);
-      const jsonData = this.parseJson(response);
-      const results = parseSearch(jsonData, readMangaIds ?? []);
-      return App.createPagedResults({
-        results,
-        metadata: {
-          page: page + 1
-          // Increment by one page
-        }
-      });
+      if (/^\d+$/.test(title)) {
+        const request = App.createRequest({
+          url: `${NHENTAI_URL}/api/gallery/${title}`,
+          method: "GET"
+        });
+        const response = await this.requestManager.schedule(request, 1);
+        this.CloudFlareError(response.status);
+        const jsonData = this.parseJson(response);
+        return App.createPagedResults({
+          results: parseSearch({ result: [jsonData], num_pages: 1, per_page: 1 }),
+          metadata: {
+            page: page + 1,
+            stopSearch: true
+          }
+        });
+      } else {
+        const q = encodeURIComponent(`${title} ${query?.includedTags?.map((x) => ` +${x.id}`)} `) + await this.generateQuery();
+        const request = App.createRequest({
+          url: `${NHENTAI_URL}/api/galleries/search?query=${q}&page=${page}&sort=${await this.sortOrder(this.stateManager)}`,
+          method: "GET"
+        });
+        const response = await this.requestManager.schedule(request, 1);
+        this.CloudFlareError(response.status);
+        const jsonData = this.parseJson(response);
+        return App.createPagedResults({
+          results: parseSearch(jsonData),
+          metadata: {
+            page: page + 1
+          }
+        });
+      }
     }
     async getHomePageSections(sectionCallback) {
-      const skipReadManga = await this.stateManager.retrieve("skip_read_manga") ?? false;
-      const readMangaIds = skipReadManga ? await this.getReadMangaIds() : [];
       const sections = [
         {
           request: App.createRequest({
@@ -1488,7 +1467,7 @@ var _Sources = (() => {
             if (hasNoResults(jsonData)) {
               return;
             }
-            section.sectionID.items = parseSearch(jsonData, readMangaIds ?? []);
+            section.sectionID.items = parseSearch(jsonData);
             sectionCallback(section.sectionID);
           })
         );
@@ -1497,8 +1476,6 @@ var _Sources = (() => {
     }
     async getViewMoreItems(homepageSectionId, metadata) {
       let page = metadata?.page ?? 1;
-      const skipReadManga = await this.stateManager.retrieve("skip_read_manga") ?? false;
-      const readMangaIds = skipReadManga ? await this.getReadMangaIds() : [];
       const request = App.createRequest({
         url: `${NHENTAI_URL}/api/galleries/search?query=${await this.generateQuery()}&sort=${homepageSectionId}&page=${page}`,
         method: "GET"
@@ -1506,21 +1483,13 @@ var _Sources = (() => {
       const response = await this.requestManager.schedule(request, 1);
       this.CloudFlareError(response.status);
       const jsonData = this.parseJson(response);
-      const results = parseSearch(jsonData, readMangaIds ?? []);
-      page += 1;
+      page++;
       return App.createPagedResults({
-        results,
+        results: parseSearch(jsonData),
         metadata: {
           page
         }
       });
-    }
-    async getReadMangaIds() {
-      const allData = await this.stateManager.retrieve("read_manga_ids");
-      if (!allData) {
-        return [];
-      }
-      return Object.keys(allData).map((key) => key);
     }
     CloudFlareError(status) {
       if (status == 503 || status == 403) {
@@ -1548,11 +1517,8 @@ Please go to the homepage of <${_NHentai.name}> and press the cloud icon.`);
       }
     }
     async generateQuery() {
-      const langQuery = await this.language(this.stateManager);
-      const extraArgs = await this.extraArgs(this.stateManager);
-      const minPages = await this.stateManager.retrieve("min_pages") ?? 0;
-      const minPagesQuery = minPages ? `pages:>${minPages}` : "";
-      return encodeURIComponent(`${langQuery} ${extraArgs} ${minPagesQuery}`.trim());
+      const query = await this.language(this.stateManager) + await this.extraArgs(this.stateManager);
+      return encodeURIComponent(query);
     }
     async language(stateManager) {
       const lang = await stateManager.retrieve("languages") ?? "";

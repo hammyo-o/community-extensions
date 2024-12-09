@@ -856,7 +856,7 @@ var _Sources = (() => {
         titles: Object.values(data.title).filter((title) => title !== null),
         artist,
         author: artist,
-        image: `https://t.nhentai.net/galleries/${data.media_id}/cover.${typeOfImage(data.images.cover)}`,
+        image: getThumbnailUrl(data.media_id, data.images.cover),
         status: "Completed",
         tags: [App.createTagSection({ id: "tags", label: "Tags", tags })],
         desc: `Pages: ${data.num_pages} | Favorites: ${data.num_favorites}`
@@ -877,8 +877,7 @@ var _Sources = (() => {
       id: mangaId,
       mangaId,
       pages: data.images.pages.map((image, i) => {
-        const type = typeOfImage(image);
-        return `https://i.nhentai.net/galleries/${data.media_id}/${i + 1}.${type}`;
+        return getPageUrl(data.media_id, i + 1, image);
       })
     });
   };
@@ -892,7 +891,7 @@ var _Sources = (() => {
     for (const gallery of data.result) {
       if (collectedIds.includes(gallery.id.toString()) || readMangaIds.includes(gallery.id.toString())) continue;
       tiles.push(App.createPartialSourceManga({
-        image: `https://t.nhentai.net/galleries/${gallery.media_id}/cover.${typeOfImage(gallery.images.cover)}`,
+        image: getThumbnailUrl(gallery.media_id, gallery.images.cover),
         title: gallery.title.pretty,
         mangaId: gallery.id.toString(),
         subtitle: NHLanguages.getName(getLanguage(gallery)).substring(0, 3) + " | Pgs: " + gallery.num_pages
@@ -914,6 +913,12 @@ var _Sources = (() => {
   var typeMap = { "j": "jpg", "p": "png", "g": "gif", "w": "webp" };
   var typeOfImage = (image) => {
     return typeMap[image.t] ?? "";
+  };
+  var getThumbnailUrl = (mediaId, image) => {
+    return `https://t3.nhentai.net/galleries/${mediaId}/cover.${typeOfImage(image)}`;
+  };
+  var getPageUrl = (mediaId, pageNumber, image) => {
+    return `https://i4.nhentai.net/galleries/${mediaId}/${pageNumber}.${typeOfImage(image)}`;
   };
   var getArtist = (gallery) => {
     const tags = gallery.tags;

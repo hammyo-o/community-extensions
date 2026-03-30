@@ -1309,7 +1309,7 @@ ${errorMessage}`);
   var NHENTAI_URL = "https://nhentai.net";
   var MAX_RATE_LIMIT_RETRIES = 3;
   var NHentaiInfo = {
-    version: "4.1.0",
+    version: "4.0.12",
     name: "nhentai",
     icon: "icon.png",
     author: "NotMarek & Netsky",
